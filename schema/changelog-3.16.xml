@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd"
+	logicalFilePath="changelog-3.16">
+
+	<changeSet author="author" id="changelog-3.16">
+
+		<createTable tableName="vehicle">
+
+			<column name="id" type="INT" autoIncrement="true">
+				<constraints nullable="false" />
+			</column>
+
+			<column name="number" type="VARCHAR(14)">
+				<constraints nullable="false" primaryKey="true" />
+			</column>
+			
+			<column name="model" type="VARCHAR(50)">
+				<constraints nullable="false"/>
+			</column>
+			
+			<column name="tonnage" type="INT">
+				<constraints nullable="false" />
+			</column>
+			
+			<column name="transport" type="BOOLEAN" defaultValueBoolean="true">
+				<constraints nullable="false" />
+			</column>
+			
+		</createTable>
+	</changeSet>
+</databaseChangeLog>
