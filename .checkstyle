@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <fileset-config file-format-version="1.2.0" simple-config="false" sync-formatter="false">
-  <local-check-config name="maven-checkstyle-plugin checkstyle" location="file:/C:/_E/dump/traccar/traccar-git/checkstyle.xml" type="remote" description="maven-checkstyle-plugin configuration checkstyle">
+  <local-check-config name="maven-checkstyle-plugin checkstyle" location="file:/C:/_E/dump/Unload/unload-server/project/checkstyle.xml" type="remote" description="maven-checkstyle-plugin configuration checkstyle">
     <property name="checkstyle.cache.file" value="${project_loc}/target/checkstyle-cachefile"/>
-    <property name="checkstyle.header.file" value="C:\_E\dump\traccar\.metadata\.plugins\org.eclipse.core.resources\.projects\traccar-git\com.basistech.m2e.code.quality.checkstyleConfigurator\checkstyle-header-checkstyle.txt"/>
+    <property name="checkstyle.header.file" value="C:\_E\dump\Unload\unload-server\.metadata\.plugins\org.eclipse.core.resources\.projects\project\com.basistech.m2e.code.quality.checkstyleConfigurator\checkstyle-header-checkstyle.txt"/>
   </local-check-config>
   <fileset name="java-sources-checkstyle" enabled="true" check-config-name="maven-checkstyle-plugin checkstyle" local="true">
     <file-match-pattern match-pattern="^src/.*\.java" include-pattern="true"/>

@@ -166,7 +166,7 @@ public class WebServer {
         ResourceConfig resourceConfig = new ResourceConfig();
         resourceConfig.registerClasses(JacksonFeature.class, ObjectMapperProvider.class, ResourceErrorHandler.class);
         resourceConfig.registerClasses(SecurityRequestFilter.class, CorsResponseFilter.class);
-        resourceConfig.packages(ServerResource.class.getPackage().getName());
+        resourceConfig.packages(ServerResource.class.getPackage().getName(), "com.sringa.api.resource");
 
         servletHandler.addServlet(new ServletHolder(new ServletContainer(resourceConfig)), "/*");
 
