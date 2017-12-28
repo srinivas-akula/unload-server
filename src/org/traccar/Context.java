@@ -75,7 +75,8 @@ import com.sringa.database.VechicleManager;
 
 public final class Context {
 
-    private Context() {}
+    private Context() {
+    }
 
     private static VechicleManager vechicleManager;
 
@@ -268,38 +269,30 @@ public final class Context {
     }
 
     public static void init(String[] arguments) throws Exception {
-
         config = new Config();
         if (arguments.length <= 0) {
             throw new RuntimeException("Configuration file is not provided");
         }
-
         config.load(arguments[0]);
-
         loggerEnabled = config.getBoolean("logger.enable");
         if (loggerEnabled) {
             Log.setupLogger(config);
         }
-
         objectMapper = new ObjectMapper();
         objectMapper.setConfig(objectMapper.getSerializationConfig()
                 .without(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS));
-
         if (config.hasKey("database.url")) {
             dataManager = new DataManager(config);
         }
-
         if (config.hasKey("media.path")) {
             mediaManager = new MediaManager(config);
         }
-
         if (dataManager != null) {
             usersManager = new UsersManager(dataManager);
             groupsManager = new GroupsManager(dataManager);
             deviceManager = new DeviceManager(dataManager);
             vechicleManager = new VechicleManager(dataManager);
         }
-
         identityManager = deviceManager;
 
         if (config.getBoolean("geocoder.enable")) {
@@ -363,7 +356,6 @@ public final class Context {
         }
 
         permissionsManager = new PermissionsManager(dataManager, usersManager);
-
         connectionManager = new ConnectionManager();
 
         tripsConfig = initTripsConfig();
@@ -426,6 +418,7 @@ public final class Context {
         identityManager = testIdentityManager;
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends BaseModel> BaseObjectManager<T> getManager(Class<T> clazz) {
         if (clazz.equals(Vehicle.class)) {
             return (BaseObjectManager<T>) vechicleManager;
