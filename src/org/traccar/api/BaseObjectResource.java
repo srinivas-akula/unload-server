@@ -1,18 +1,16 @@
 /*
- * Copyright 2017 Anton Tananaev (anton@traccar.org)
- * Copyright 2017 Andrey Kunitsyn (andrey@traccar.org)
+ * Copyright 2017 Anton Tananaev (anton@traccar.org) Copyright 2017 Andrey Kunitsyn
+ * (andrey@traccar.org)
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.traccar.api;
 
@@ -37,6 +35,8 @@ import org.traccar.model.Device;
 import org.traccar.model.Group;
 import org.traccar.model.User;
 
+import com.sringa.data.model.Vehicle;
+
 public abstract class BaseObjectResource<T extends BaseModel> extends BaseResource {
 
     private Class<T> baseClass;
@@ -49,10 +49,11 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
         return baseClass;
     }
 
-    protected final Set<Long> getSimpleManagerItems(BaseObjectManager<T> manager, boolean all,  long userId) {
+    protected final Set<Long> getSimpleManagerItems(BaseObjectManager<T> manager, boolean all,
+            long userId) {
         Set<Long> result = null;
         if (all) {
-            if (Context.getPermissionsManager().getUserAdmin(getUserId())) {
+            if (Context.getPermissionsManager().isAdmin(getUserId())) {
                 result = manager.getAllItems();
             } else {
                 Context.getPermissionsManager().checkManager(getUserId());
@@ -81,11 +82,13 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
         BaseObjectManager<T> manager = Context.getManager(baseClass);
         manager.addItem(entity);
 
-        Context.getDataManager().linkObject(User.class, getUserId(), baseClass, entity.getId(), true);
+        Context.getDataManager().linkObject(User.class, getUserId(), baseClass, entity.getId(),
+                true);
 
         if (manager instanceof SimpleObjectManager) {
             ((SimpleObjectManager<T>) manager).refreshUserItems();
-        } else if (baseClass.equals(Group.class) || baseClass.equals(Device.class)) {
+        } else if (baseClass.equals(Group.class) || baseClass.equals(Device.class)
+                || baseClass.equals(Vehicle.class)) {
             Context.getPermissionsManager().refreshDeviceAndGroupPermissions();
             Context.getPermissionsManager().refreshAllExtendedPermissions();
         }
@@ -108,7 +111,8 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
 
         Context.getManager(baseClass).updateItem(entity);
 
-        if (baseClass.equals(Group.class) || baseClass.equals(Device.class)) {
+        if (baseClass.equals(Group.class) || baseClass.equals(Device.class)
+                || baseClass.equals(Vehicle.class) || baseClass.equals(Vehicle.class)) {
             Context.getPermissionsManager().refreshDeviceAndGroupPermissions();
             Context.getPermissionsManager().refreshAllExtendedPermissions();
         }
@@ -135,7 +139,8 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
                 ((ExtendedObjectManager<T>) manager).refreshExtendedPermissions();
             }
         }
-        if (baseClass.equals(Group.class) || baseClass.equals(Device.class) || baseClass.equals(User.class)) {
+        if (baseClass.equals(Group.class) || baseClass.equals(Device.class)
+                || baseClass.equals(User.class) || baseClass.equals(Vehicle.class)) {
             Context.getPermissionsManager().refreshDeviceAndGroupPermissions();
             if (baseClass.equals(User.class)) {
                 Context.getPermissionsManager().refreshAllUsersPermissions();

@@ -58,6 +58,7 @@ import org.traccar.model.Server;
 import org.traccar.model.Statistics;
 import org.traccar.model.User;
 
+import com.sringa.data.model.Vehicle;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -376,6 +377,8 @@ public class DataManager {
 
     public static Class<?> getClassByName(String name) throws ClassNotFoundException {
         switch (name.toLowerCase().replace("id", "")) {
+            case "vehicle":
+                return Vehicle.class;
             case "device":
                 return Device.class;
             case "group":

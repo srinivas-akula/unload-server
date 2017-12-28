@@ -1,8 +1,8 @@
 package com.sringa.data.model;
 
-import org.traccar.model.ExtendedModel;
+import org.traccar.model.BaseModel;
 
-public class Vehicle extends ExtendedModel {
+public class Vehicle extends BaseModel {
 
     private String number;
     private String model;

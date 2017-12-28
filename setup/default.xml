@@ -23,7 +23,7 @@
 
     <entry key='media.path'>./media</entry>
 
-    <entry key='server.statistics'>https://www.traccar.org/analytics/</entry>
+    <entry key='server.statistics'>https://www.sringa.org/analytics/</entry>
 
     <!-- DATABASE CONFIG -->
 

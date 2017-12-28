@@ -7,7 +7,7 @@
 
 	<changeSet author="author" id="changelog-3.16">
 
-		<createTable tableName="vehicle">
+		<createTable tableName="vehicles">
 
 			<column name="id" type="INT" autoIncrement="true">
 				<constraints nullable="false" />
@@ -16,19 +16,32 @@
 			<column name="number" type="VARCHAR(14)">
 				<constraints nullable="false" primaryKey="true" />
 			</column>
-			
+
 			<column name="model" type="VARCHAR(50)">
-				<constraints nullable="false"/>
+				<constraints nullable="false" />
 			</column>
-			
+
+			<column name="axle" type="VARCHAR(50)">
+				<constraints nullable="false" />
+			</column>
+
 			<column name="tonnage" type="INT">
 				<constraints nullable="false" />
 			</column>
-			
-			<column name="transport" type="BOOLEAN" defaultValueBoolean="true">
+
+		</createTable>
+
+		<!-- Mapping table between User and Vehicle -->
+		<createTable tableName="user_vehicle">
+
+			<column name="userid" type="INT">
 				<constraints nullable="false" />
 			</column>
-			
+
+			<column name="vehicleid" type="INT">
+				<constraints nullable="false" />
+			</column>
+
 		</createTable>
 	</changeSet>
 </databaseChangeLog>

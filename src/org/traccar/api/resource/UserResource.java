@@ -1,17 +1,15 @@
 /*
  * Copyright 2015 - 2017 Anton Tananaev (anton@traccar.org)
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.traccar.api.resource;
 
@@ -48,7 +46,7 @@ public class UserResource extends BaseObjectResource<User> {
     public Collection<User> get(@QueryParam("userId") long userId) throws SQLException {
         UsersManager usersManager = Context.getUsersManager();
         Set<Long> result = null;
-        if (Context.getPermissionsManager().getUserAdmin(getUserId())) {
+        if (Context.getPermissionsManager().isAdmin(getUserId())) {
             if (userId != 0) {
                 result = usersManager.getUserItems(userId);
             } else {
@@ -66,23 +64,25 @@ public class UserResource extends BaseObjectResource<User> {
     @PermitAll
     @POST
     public Response add(User entity) throws SQLException {
-        if (!Context.getPermissionsManager().getUserAdmin(getUserId())) {
+        if (!Context.getPermissionsManager().isAdmin(getUserId())) {
             Context.getPermissionsManager().checkUserUpdate(getUserId(), new User(), entity);
             if (Context.getPermissionsManager().getUserManager(getUserId())) {
                 Context.getPermissionsManager().checkUserLimit(getUserId());
             } else {
                 Context.getPermissionsManager().checkRegistration(getUserId());
-                entity.setDeviceLimit(Context.getConfig().getInteger("users.defaultDeviceLimit", -1));
+                entity.setDeviceLimit(
+                        Context.getConfig().getInteger("users.defaultDeviceLimit", -1));
                 int expirationDays = Context.getConfig().getInteger("users.defaultExpirationDays");
                 if (expirationDays > 0) {
-                    entity.setExpirationTime(
-                        new Date(System.currentTimeMillis() + (long) expirationDays * 24 * 3600 * 1000));
+                    entity.setExpirationTime(new Date(
+                            System.currentTimeMillis() + (long) expirationDays * 24 * 3600 * 1000));
                 }
             }
         }
         Context.getUsersManager().addItem(entity);
         if (Context.getPermissionsManager().getUserManager(getUserId())) {
-            Context.getDataManager().linkObject(User.class, getUserId(), ManagedUser.class, entity.getId(), true);
+            Context.getDataManager().linkObject(User.class, getUserId(), ManagedUser.class,
+                    entity.getId(), true);
         }
         Context.getUsersManager().refreshUserItems();
         return Response.ok(entity).build();

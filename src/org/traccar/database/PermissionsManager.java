@@ -1,19 +1,23 @@
 /*
  * Copyright 2015 - 2017 Anton Tananaev (anton@traccar.org)
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.traccar.database;
+
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import org.traccar.Context;
 import org.traccar.helper.Log;
@@ -31,11 +35,7 @@ import org.traccar.model.Permission;
 import org.traccar.model.Server;
 import org.traccar.model.User;
 
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import com.sringa.data.model.Vehicle;
 
 public class PermissionsManager {
 
@@ -47,6 +47,7 @@ public class PermissionsManager {
     private final Map<Long, Set<Long>> groupPermissions = new HashMap<>();
     private final Map<Long, Set<Long>> devicePermissions = new HashMap<>();
     private final Map<Long, Set<Long>> deviceUsers = new HashMap<>();
+    private final Map<Long, Set<Long>> vehiclePermissions = new HashMap<>();
     private final Map<Long, Set<Long>> groupDevices = new HashMap<>();
 
     public PermissionsManager(DataManager dataManager, UsersManager usersManager) {
@@ -74,6 +75,14 @@ public class PermissionsManager {
         return devicePermissions.get(userId);
     }
 
+
+    public Set<Long> getVehiclePermissions(long userId) {
+        if (!vehiclePermissions.containsKey(userId)) {
+            vehiclePermissions.put(userId, new HashSet<Long>());
+        }
+        return vehiclePermissions.get(userId);
+    }
+
     public Set<Long> getDeviceUsers(long deviceId) {
         if (!deviceUsers.containsKey(deviceId)) {
             deviceUsers.put(deviceId, new HashSet<Long>());
@@ -99,13 +108,15 @@ public class PermissionsManager {
     public final void refreshDeviceAndGroupPermissions() {
         groupPermissions.clear();
         devicePermissions.clear();
+        vehiclePermissions.clear();
         try {
-            GroupTree groupTree = new GroupTree(Context.getGroupsManager().getItems(
-                    Context.getGroupsManager().getAllItems()),
+            GroupTree groupTree = new GroupTree(
+                    Context.getGroupsManager().getItems(Context.getGroupsManager().getAllItems()),
                     Context.getDeviceManager().getAllDevices());
             for (Permission groupPermission : dataManager.getPermissions(User.class, Group.class)) {
                 Set<Long> userGroupPermissions = getGroupPermissions(groupPermission.getOwnerId());
-                Set<Long> userDevicePermissions = getDevicePermissions(groupPermission.getOwnerId());
+                Set<Long> userDevicePermissions =
+                        getDevicePermissions(groupPermission.getOwnerId());
                 userGroupPermissions.add(groupPermission.getPropertyId());
                 for (Group group : groupTree.getGroups(groupPermission.getPropertyId())) {
                     userGroupPermissions.add(group.getId());
@@ -115,8 +126,16 @@ public class PermissionsManager {
                 }
             }
 
-            for (Permission devicePermission : dataManager.getPermissions(User.class, Device.class)) {
-                getDevicePermissions(devicePermission.getOwnerId()).add(devicePermission.getPropertyId());
+            for (Permission devicePermission : dataManager.getPermissions(User.class,
+                    Device.class)) {
+                getDevicePermissions(devicePermission.getOwnerId())
+                        .add(devicePermission.getPropertyId());
+            }
+
+            for (Permission vehiclePermission : dataManager.getPermissions(User.class,
+                    Vehicle.class)) {
+                getVehiclePermissions(vehiclePermission.getOwnerId())
+                        .add(vehiclePermission.getPropertyId());
             }
 
             groupDevices.clear();
@@ -138,13 +157,13 @@ public class PermissionsManager {
         }
     }
 
-    public boolean getUserAdmin(long userId) {
+    public boolean isAdmin(long userId) {
         User user = getUser(userId);
         return user != null && user.getAdmin();
     }
 
     public void checkAdmin(long userId) throws SecurityException {
-        if (!getUserAdmin(userId)) {
+        if (!isAdmin(userId)) {
             throw new SecurityException("Admin access required");
         }
     }
@@ -205,25 +224,28 @@ public class PermissionsManager {
     }
 
     public void checkReadonly(long userId) throws SecurityException {
-        if (!getUserAdmin(userId) && (server.getReadonly() || getUserReadonly(userId))) {
+        if (!isAdmin(userId) && (server.getReadonly() || getUserReadonly(userId))) {
             throw new SecurityException("Account is readonly");
         }
     }
 
     public void checkDeviceReadonly(long userId) throws SecurityException {
-        if (!getUserAdmin(userId) && (server.getDeviceReadonly() || getUserDeviceReadonly(userId))) {
+        if (!isAdmin(userId)
+                && (server.getDeviceReadonly() || getUserDeviceReadonly(userId))) {
             throw new SecurityException("Account is device readonly");
         }
     }
 
     public void checkLimitCommands(long userId) throws SecurityException {
-        if (!getUserAdmin(userId) && (server.getLimitCommands() || getUserLimitCommands(userId))) {
+        if (!isAdmin(userId) && (server.getLimitCommands() || getUserLimitCommands(userId))) {
             throw new SecurityException("Account has limit sending commands");
         }
     }
 
-    public void checkUserDeviceCommand(long userId, long deviceId, long commandId) throws SecurityException {
-        if (!getUserAdmin(userId) && Context.getCommandsManager().checkDeviceCommand(deviceId, commandId)) {
+    public void checkUserDeviceCommand(long userId, long deviceId, long commandId)
+            throws SecurityException {
+        if (!isAdmin(userId)
+                && Context.getCommandsManager().checkDeviceCommand(deviceId, commandId)) {
             throw new SecurityException("Command can not be sent to this device");
         }
     }
@@ -236,7 +258,8 @@ public class PermissionsManager {
         if (user.getDisabled()) {
             throw new SecurityException("Account is disabled");
         }
-        if (user.getExpirationTime() != null && System.currentTimeMillis() > user.getExpirationTime().getTime()) {
+        if (user.getExpirationTime() != null
+                && System.currentTimeMillis() > user.getExpirationTime().getTime()) {
             throw new SecurityException("Account has expired");
         }
     }
@@ -248,8 +271,7 @@ public class PermissionsManager {
             checkAdmin(userId);
         }
         User user = getUser(userId);
-        if (user != null && user.getExpirationTime() != null
-                && (after.getExpirationTime() == null
+        if (user != null && user.getExpirationTime() != null && (after.getExpirationTime() == null
                 || user.getExpirationTime().compareTo(after.getExpirationTime()) < 0)) {
             checkAdmin(userId);
         }
@@ -259,20 +281,20 @@ public class PermissionsManager {
             if (userId == after.getId()) {
                 checkAdmin(userId);
             }
-            if (!getUserAdmin(userId)) {
+            if (!isAdmin(userId)) {
                 checkManager(userId);
             }
         }
     }
 
     public void checkUser(long userId, long managedUserId) throws SecurityException {
-        if (userId != managedUserId && !getUserAdmin(userId)) {
+        if (userId != managedUserId && !isAdmin(userId)) {
             checkManager(userId, managedUserId);
         }
     }
 
     public void checkGroup(long userId, long groupId) throws SecurityException {
-        if (!getGroupPermissions(userId).contains(groupId) && !getUserAdmin(userId)) {
+        if (!getGroupPermissions(userId).contains(groupId) && !isAdmin(userId)) {
             checkManager(userId);
             for (long managedUserId : usersManager.getUserItems(userId)) {
                 if (getGroupPermissions(managedUserId).contains(groupId)) {
@@ -284,7 +306,8 @@ public class PermissionsManager {
     }
 
     public void checkDevice(long userId, long deviceId) throws SecurityException {
-        if (!Context.getDeviceManager().getUserItems(userId).contains(deviceId) && !getUserAdmin(userId)) {
+        if (!Context.getDeviceManager().getUserItems(userId).contains(deviceId)
+                && !isAdmin(userId)) {
             checkManager(userId);
             for (long managedUserId : usersManager.getUserItems(userId)) {
                 if (Context.getDeviceManager().getUserItems(managedUserId).contains(deviceId)) {
@@ -296,7 +319,7 @@ public class PermissionsManager {
     }
 
     public void checkRegistration(long userId) {
-        if (!server.getRegistration() && !getUserAdmin(userId)) {
+        if (!server.getRegistration() && !isAdmin(userId)) {
             throw new SecurityException("Registration disabled");
         }
     }
@@ -307,6 +330,8 @@ public class PermissionsManager {
 
         if (object.equals(Device.class)) {
             checkDevice(userId, objectId);
+        } else if (object.equals(Vehicle.class)) {
+            checkVehicle(userId, objectId);
         } else if (object.equals(Group.class)) {
             checkGroup(userId, objectId);
         } else if (object.equals(User.class) || object.equals(ManagedUser.class)) {
@@ -327,7 +352,8 @@ public class PermissionsManager {
             throw new IllegalArgumentException("Unknown object type");
         }
 
-        if (manager != null && !manager.checkItemPermission(userId, objectId) && !getUserAdmin(userId)) {
+        if (manager != null && !manager.checkItemPermission(userId, objectId)
+                && !isAdmin(userId)) {
             checkManager(userId);
             for (long managedUserId : usersManager.getManagedItems(userId)) {
                 if (manager.checkItemPermission(managedUserId, objectId)) {
@@ -335,6 +361,19 @@ public class PermissionsManager {
                 }
             }
             throw new SecurityException("Type " + object + " access denied");
+        }
+    }
+
+    public void checkVehicle(long userId, long vehicleId) {
+
+        if (!vehiclePermissions.get(userId).contains(vehicleId) && !isAdmin(userId)) {
+            checkManager(userId);
+            for (long managedUserId : usersManager.getUserItems(userId)) {
+                if (vehiclePermissions.get(managedUserId).contains(vehicleId)) {
+                    return;
+                }
+            }
+            throw new SecurityException("Device access denied");
         }
     }
 
@@ -368,7 +407,8 @@ public class PermissionsManager {
                 refreshAllExtendedPermissions();
             } else if (permission.getPropertyClass().equals(ManagedUser.class)) {
                 usersManager.refreshUserItems();
-            } else if (permission.getPropertyClass().equals(Geofence.class) && Context.getGeofenceManager() != null) {
+            } else if (permission.getPropertyClass().equals(Geofence.class)
+                    && Context.getGeofenceManager() != null) {
                 Context.getGeofenceManager().refreshUserItems();
             } else if (permission.getPropertyClass().equals(Driver.class)) {
                 Context.getDriversManager().refreshUserItems();
@@ -382,8 +422,10 @@ public class PermissionsManager {
                     && Context.getNotificationManager() != null) {
                 Context.getNotificationManager().refreshUserItems();
             }
-        } else if (permission.getOwnerClass().equals(Device.class) || permission.getOwnerClass().equals(Group.class)) {
-            if (permission.getPropertyClass().equals(Geofence.class) && Context.getGeofenceManager() != null) {
+        } else if (permission.getOwnerClass().equals(Device.class)
+                || permission.getOwnerClass().equals(Group.class)) {
+            if (permission.getPropertyClass().equals(Geofence.class)
+                    && Context.getGeofenceManager() != null) {
                 Context.getGeofenceManager().refreshExtendedPermissions();
             } else if (permission.getPropertyClass().equals(Driver.class)) {
                 Context.getDriversManager().refreshExtendedPermissions();

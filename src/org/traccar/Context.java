@@ -1,23 +1,17 @@
 /*
  * Copyright 2015 - 2017 Anton Tananaev (anton@traccar.org)
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.traccar;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.ning.http.client.AsyncHttpClient;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -25,20 +19,20 @@ import java.util.Properties;
 
 import org.apache.velocity.app.VelocityEngine;
 import org.eclipse.jetty.util.URIUtil;
-import org.traccar.database.CalendarManager;
-import org.traccar.database.CommandsManager;
 import org.traccar.database.AttributesManager;
 import org.traccar.database.BaseObjectManager;
+import org.traccar.database.CalendarManager;
+import org.traccar.database.CommandsManager;
 import org.traccar.database.ConnectionManager;
 import org.traccar.database.DataManager;
 import org.traccar.database.DeviceManager;
 import org.traccar.database.DriversManager;
+import org.traccar.database.GeofenceManager;
+import org.traccar.database.GroupsManager;
 import org.traccar.database.IdentityManager;
 import org.traccar.database.MediaManager;
 import org.traccar.database.NotificationManager;
 import org.traccar.database.PermissionsManager;
-import org.traccar.database.GeofenceManager;
-import org.traccar.database.GroupsManager;
 import org.traccar.database.StatisticsManager;
 import org.traccar.database.UsersManager;
 import org.traccar.events.MotionEventHandler;
@@ -46,12 +40,16 @@ import org.traccar.events.OverspeedEventHandler;
 import org.traccar.geocoder.BingMapsGeocoder;
 import org.traccar.geocoder.FactualGeocoder;
 import org.traccar.geocoder.GeocodeFarmGeocoder;
+import org.traccar.geocoder.Geocoder;
 import org.traccar.geocoder.GisgraphyGeocoder;
 import org.traccar.geocoder.GoogleGeocoder;
 import org.traccar.geocoder.MapQuestGeocoder;
 import org.traccar.geocoder.NominatimGeocoder;
 import org.traccar.geocoder.OpenCageGeocoder;
-import org.traccar.geocoder.Geocoder;
+import org.traccar.geolocation.GeolocationProvider;
+import org.traccar.geolocation.GoogleGeolocationProvider;
+import org.traccar.geolocation.MozillaGeolocationProvider;
+import org.traccar.geolocation.OpenCellIdGeolocationProvider;
 import org.traccar.geolocation.UnwiredGeolocationProvider;
 import org.traccar.helper.Log;
 import org.traccar.model.Attribute;
@@ -64,18 +62,25 @@ import org.traccar.model.Geofence;
 import org.traccar.model.Group;
 import org.traccar.model.Notification;
 import org.traccar.model.User;
-import org.traccar.geolocation.GoogleGeolocationProvider;
-import org.traccar.geolocation.GeolocationProvider;
-import org.traccar.geolocation.MozillaGeolocationProvider;
-import org.traccar.geolocation.OpenCellIdGeolocationProvider;
 import org.traccar.notification.EventForwarder;
 import org.traccar.reports.model.TripsConfig;
 import org.traccar.smpp.SmppClient;
 import org.traccar.web.WebServer;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.ning.http.client.AsyncHttpClient;
+import com.sringa.data.model.Vehicle;
+import com.sringa.database.VechicleManager;
+
 public final class Context {
 
-    private Context() {
+    private Context() {}
+
+    private static VechicleManager vechicleManager;
+
+    public static VechicleManager getVehicleManager() {
+        return vechicleManager;
     }
 
     private static Config config;
@@ -253,8 +258,7 @@ public final class Context {
     }
 
     public static TripsConfig initTripsConfig() {
-        return new TripsConfig(
-                config.getLong("report.trip.minimalTripDistance", 500),
+        return new TripsConfig(config.getLong("report.trip.minimalTripDistance", 500),
                 config.getLong("report.trip.minimalTripDuration", 300) * 1000,
                 config.getLong("report.trip.minimalParkingDuration", 300) * 1000,
                 config.getLong("report.trip.minimalNoDataDuration", 3600) * 1000,
@@ -278,8 +282,8 @@ public final class Context {
         }
 
         objectMapper = new ObjectMapper();
-        objectMapper.setConfig(
-                objectMapper.getSerializationConfig().without(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS));
+        objectMapper.setConfig(objectMapper.getSerializationConfig()
+                .without(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS));
 
         if (config.hasKey("database.url")) {
             dataManager = new DataManager(config);
@@ -293,6 +297,7 @@ public final class Context {
             usersManager = new UsersManager(dataManager);
             groupsManager = new GroupsManager(dataManager);
             deviceManager = new DeviceManager(dataManager);
+            vechicleManager = new VechicleManager(dataManager);
         }
 
         identityManager = deviceManager;
@@ -375,12 +380,14 @@ public final class Context {
 
             String address;
             try {
-                address = config.getString("web.address", InetAddress.getLocalHost().getHostAddress());
+                address = config.getString("web.address",
+                        InetAddress.getLocalHost().getHostAddress());
             } catch (UnknownHostException e) {
                 address = "localhost";
             }
 
-            String webUrl = URIUtil.newURI("http", address, config.getInteger("web.port", 8082), "", "");
+            String webUrl =
+                    URIUtil.newURI("http", address, config.getInteger("web.port", 8082), "", "");
             webUrl = Context.getConfig().getString("web.url", webUrl);
             velocityProperties.setProperty("web.url", webUrl);
 
@@ -420,7 +427,9 @@ public final class Context {
     }
 
     public static <T extends BaseModel> BaseObjectManager<T> getManager(Class<T> clazz) {
-        if (clazz.equals(Device.class)) {
+        if (clazz.equals(Vehicle.class)) {
+            return (BaseObjectManager<T>) vechicleManager;
+        } else if (clazz.equals(Device.class)) {
             return (BaseObjectManager<T>) deviceManager;
         } else if (clazz.equals(Group.class)) {
             return (BaseObjectManager<T>) groupsManager;
