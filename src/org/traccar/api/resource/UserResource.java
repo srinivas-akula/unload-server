@@ -88,4 +88,27 @@ public class UserResource extends BaseObjectResource<User> {
         return Response.ok(entity).build();
     }
 
+    @PermitAll
+    @Path("new")
+    @POST
+    public Response addNewUser(User entity) throws Exception {
+
+        if (null == entity.getPhone() || null == entity.getUid() || null == entity.getMode()
+                || null == entity.getHashedPassword() || null == entity.getSalt()) {
+            throw new Exception("Phone or Uid or Mode or Password is missing.");
+        }
+
+        final User user = Context.getUsersManager().getByPhone(entity.getPhone());
+        if (null != user) {
+            throw new Exception("User already exists with the phone: " + user.getPhone());
+        }
+        if ("D".equals(entity.getMode())) {
+            entity.setVehiclelimit(1);
+        } else {
+            entity.setVehiclelimit(20);
+        }
+        entity.setUserLimit(1);
+        Context.getUsersManager().addItem(entity);
+        return Response.ok(entity).build();
+    }
 }

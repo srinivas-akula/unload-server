@@ -15,7 +15,7 @@ import org.traccar.Context;
 import org.traccar.api.BaseObjectResource;
 
 import com.sringa.data.model.Vehicle;
-import com.sringa.database.VechicleManager;
+import com.sringa.database.VehicleManager;
 
 @Path("vehicles")
 @Produces(MediaType.APPLICATION_JSON)
@@ -29,7 +29,7 @@ public class VehicleResource extends BaseObjectResource<Vehicle> {
     @GET
     public Collection<Vehicle> get(@QueryParam("userId") Long userId) {
 
-        VechicleManager vehicleManager = Context.getVehicleManager();
+        VehicleManager vehicleManager = Context.getVehicleManager();
         Set<Long> result = new HashSet<>();
         // for admin users
         if (null != userId && Context.getPermissionsManager().isAdmin(getUserId())) {
@@ -41,4 +41,24 @@ public class VehicleResource extends BaseObjectResource<Vehicle> {
         }
         return vehicleManager.getItems(result);
     }
+
+    // @Path("{number}")
+    // @DELETE
+    // public Response remove(@PathParam("number") String number) throws SQLException {
+    //
+    // Context.getPermissionsManager().checkReadonly(getUserId());
+    //
+    // Long id = Context.getVehicleManager().getIdByNumber(number);
+    // if (null == id) {
+    // throw new SQLException("NO Vehicle found with number: " + number);
+    // }
+    // Context.getPermissionsManager().checkPermission(Vehicle.class, getUserId(), id);
+    //
+    // VehicleManager manager = Context.getVehicleManager();
+    // manager.removeItem(id);
+    //
+    // Context.getPermissionsManager().refreshDeviceAndGroupPermissions();
+    // Context.getPermissionsManager().refreshAllExtendedPermissions();
+    // return Response.noContent().build();
+    // }
 }

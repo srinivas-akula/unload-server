@@ -1,18 +1,16 @@
 /*
- * Copyright 2017 Anton Tananaev (anton@traccar.org)
- * Copyright 2017 Andrey Kunitsyn (andrey@traccar.org)
+ * Copyright 2017 Anton Tananaev (anton@traccar.org) Copyright 2017 Andrey Kunitsyn
+ * (andrey@traccar.org)
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.traccar.database;
 
@@ -26,11 +24,15 @@ import org.traccar.model.User;
 public class UsersManager extends SimpleObjectManager<User> {
 
     private Map<String, User> usersTokens;
+    private Map<String, User> userByPhone;
 
     public UsersManager(DataManager dataManager) {
         super(dataManager, User.class);
         if (usersTokens == null) {
             usersTokens = new ConcurrentHashMap<>();
+        }
+        if (userByPhone == null) {
+            userByPhone = new ConcurrentHashMap<>();
         }
     }
 
@@ -43,10 +45,20 @@ public class UsersManager extends SimpleObjectManager<User> {
         }
     }
 
+    private void addPhone(User user) {
+        if (userByPhone == null) {
+            userByPhone = new ConcurrentHashMap<>();
+        }
+        if (null != user.getPhone()) {
+            userByPhone.put(user.getPhone(), user);
+        }
+    }
+
     @Override
     protected void addNewItem(User user) {
         super.addNewItem(user);
         putToken(user);
+        addPhone(user);
     }
 
     @Override
@@ -56,6 +68,10 @@ public class UsersManager extends SimpleObjectManager<User> {
         putToken(user);
         if (cachedUser.getToken() != null && !cachedUser.getToken().equals(user.getToken())) {
             usersTokens.remove(cachedUser.getToken());
+        }
+        addPhone(user);
+        if (cachedUser.getPhone() != null && !cachedUser.getPhone().equals(user.getPhone())) {
+            userByPhone.remove(cachedUser.getPhone());
         }
     }
 
@@ -67,6 +83,9 @@ public class UsersManager extends SimpleObjectManager<User> {
             super.removeCachedItem(userId);
             if (userToken != null) {
                 usersTokens.remove(userToken);
+            }
+            if (null != cachedUser.getPhone()) {
+                userByPhone.remove(cachedUser.getPhone());
             }
         }
     }
@@ -83,4 +102,7 @@ public class UsersManager extends SimpleObjectManager<User> {
         return usersTokens.get(token);
     }
 
+    public User getByPhone(String phone) {
+        return this.userByPhone.get(phone);
+    }
 }

@@ -71,12 +71,20 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
 
     @POST
     public Response add(T entity) throws SQLException {
+
         Context.getPermissionsManager().checkReadonly(getUserId());
         if (baseClass.equals(Device.class)) {
             Context.getPermissionsManager().checkDeviceReadonly(getUserId());
             Context.getPermissionsManager().checkDeviceLimit(getUserId());
         } else if (baseClass.equals(Command.class)) {
             Context.getPermissionsManager().checkLimitCommands(getUserId());
+        } else if (baseClass.equals(Vehicle.class)) {
+            User user = Context.getUsersManager().getById(getUserId());
+            Set<Long> vehicles = Context.getVehicleManager().getUserItems(getUserId());
+            if (null != vehicles && vehicles.size() >= user.getVehiclelimit()) {
+                throw new SQLException(
+                        "User reached his Vehicle Limit. New vehicles can not be added anymore.");
+            }
         }
 
         BaseObjectManager<T> manager = Context.getManager(baseClass);
@@ -106,6 +114,14 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
             Context.getPermissionsManager().checkUserUpdate(getUserId(), before, (User) entity);
         } else if (baseClass.equals(Command.class)) {
             Context.getPermissionsManager().checkLimitCommands(getUserId());
+        } else if (baseClass.equals(Vehicle.class)) {
+            Vehicle item = (Vehicle) entity;
+            Long id = Context.getVehicleManager().getIdByNumber(item.getNumber());
+            if (null == id) {
+                throw new SQLException("NO Vehicle found with number: " + item.getNumber());
+            }
+            item.setId(id);
+            entity = (T) item;
         }
         Context.getPermissionsManager().checkPermission(baseClass, getUserId(), entity.getId());
 
@@ -121,7 +137,14 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
 
     @Path("{id}")
     @DELETE
-    public Response remove(@PathParam("id") long id) throws SQLException {
+    public Response remove(@PathParam("id") String idStr) throws SQLException {
+
+        Long id = null;
+        if (baseClass.equals(Vehicle.class)) {
+            id = Context.getVehicleManager().getIdByNumber(idStr);
+        } else {
+            id = Long.valueOf(idStr);
+        }
         Context.getPermissionsManager().checkReadonly(getUserId());
         if (baseClass.equals(Device.class)) {
             Context.getPermissionsManager().checkDeviceReadonly(getUserId());

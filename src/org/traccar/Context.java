@@ -71,16 +71,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.ning.http.client.AsyncHttpClient;
 import com.sringa.data.model.Vehicle;
-import com.sringa.database.VechicleManager;
+import com.sringa.database.VehicleManager;
 
 public final class Context {
 
     private Context() {
     }
 
-    private static VechicleManager vechicleManager;
+    private static VehicleManager vechicleManager;
 
-    public static VechicleManager getVehicleManager() {
+    public static VehicleManager getVehicleManager() {
         return vechicleManager;
     }
 
@@ -291,7 +291,7 @@ public final class Context {
             usersManager = new UsersManager(dataManager);
             groupsManager = new GroupsManager(dataManager);
             deviceManager = new DeviceManager(dataManager);
-            vechicleManager = new VechicleManager(dataManager);
+            vechicleManager = new VehicleManager(dataManager);
         }
         identityManager = deviceManager;
 

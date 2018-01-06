@@ -8,10 +8,6 @@
 
   <changeSet author="author" id="changelog-3.11">
 
-    <addColumn tableName="users">
-      <column name="phone" type="VARCHAR(128)" />
-    </addColumn>
-
     <addColumn tableName="notifications">
       <column name="sms" type="BOOLEAN" defaultValueBoolean="false" />
     </addColumn>

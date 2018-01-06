@@ -49,7 +49,7 @@
     </addColumn>
 
     <addColumn tableName="users">
-      <column name="userlimit" type="INT" defaultValueNumeric="0" />
+      <column name="userlimit" type="INT" defaultValueNumeric="1" />
     </addColumn>
 
     <createTable tableName="user_user">
