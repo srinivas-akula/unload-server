@@ -89,6 +89,22 @@ public class UserResource extends BaseObjectResource<User> {
     }
 
     @PermitAll
+    @Path("register")
+    @POST
+    public Response updatePwd(User entity) throws Exception {
+
+        if (null == entity.getSalt() || null == entity.getHashedPassword() || null == entity.getPhone()) {
+            throw new Exception("Phone or password is missing.");
+        }
+        User user = Context.getUsersManager().getByPhone(entity.getPhone());
+        if (null == user) {
+            throw new Exception("No User exists with phone: " + entity.getPhone());
+        }
+        Context.getUsersManager().updateItem(entity);
+        return Response.ok(entity).build();
+    }
+
+    @PermitAll
     @Path("new")
     @POST
     public Response addNewUser(User entity) throws Exception {
@@ -100,7 +116,7 @@ public class UserResource extends BaseObjectResource<User> {
 
         final User user = Context.getUsersManager().getByPhone(entity.getPhone());
         if (null != user) {
-            throw new Exception("User already exists with the phone: " + user.getPhone());
+            return Response.ok(entity).build();
         }
         if ("D".equals(entity.getMode())) {
             entity.setVehiclelimit(1);

@@ -70,18 +70,11 @@ import org.traccar.web.WebServer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.ning.http.client.AsyncHttpClient;
-import com.sringa.data.model.Vehicle;
-import com.sringa.database.VehicleManager;
 
 public final class Context {
 
     private Context() {
-    }
 
-    private static VehicleManager vechicleManager;
-
-    public static VehicleManager getVehicleManager() {
-        return vechicleManager;
     }
 
     private static Config config;
@@ -291,7 +284,6 @@ public final class Context {
             usersManager = new UsersManager(dataManager);
             groupsManager = new GroupsManager(dataManager);
             deviceManager = new DeviceManager(dataManager);
-            vechicleManager = new VehicleManager(dataManager);
         }
         identityManager = deviceManager;
 
@@ -420,9 +412,7 @@ public final class Context {
 
     @SuppressWarnings("unchecked")
     public static <T extends BaseModel> BaseObjectManager<T> getManager(Class<T> clazz) {
-        if (clazz.equals(Vehicle.class)) {
-            return (BaseObjectManager<T>) vechicleManager;
-        } else if (clazz.equals(Device.class)) {
+        if (clazz.equals(Device.class)) {
             return (BaseObjectManager<T>) deviceManager;
         } else if (clazz.equals(Group.class)) {
             return (BaseObjectManager<T>) groupsManager;

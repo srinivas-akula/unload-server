@@ -15,6 +15,7 @@
 package org.traccar.api;
 
 import java.sql.SQLException;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.ws.rs.DELETE;
@@ -34,8 +35,6 @@ import org.traccar.model.Command;
 import org.traccar.model.Device;
 import org.traccar.model.Group;
 import org.traccar.model.User;
-
-import com.sringa.data.model.Vehicle;
 
 public abstract class BaseObjectResource<T extends BaseModel> extends BaseResource {
 
@@ -78,13 +77,6 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
             Context.getPermissionsManager().checkDeviceLimit(getUserId());
         } else if (baseClass.equals(Command.class)) {
             Context.getPermissionsManager().checkLimitCommands(getUserId());
-        } else if (baseClass.equals(Vehicle.class)) {
-            User user = Context.getUsersManager().getById(getUserId());
-            Set<Long> vehicles = Context.getVehicleManager().getUserItems(getUserId());
-            if (null != vehicles && vehicles.size() >= user.getVehiclelimit()) {
-                throw new SQLException(
-                        "User reached his Vehicle Limit. New vehicles can not be added anymore.");
-            }
         }
 
         BaseObjectManager<T> manager = Context.getManager(baseClass);
@@ -95,8 +87,7 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
 
         if (manager instanceof SimpleObjectManager) {
             ((SimpleObjectManager<T>) manager).refreshUserItems();
-        } else if (baseClass.equals(Group.class) || baseClass.equals(Device.class)
-                || baseClass.equals(Vehicle.class)) {
+        } else if (baseClass.equals(Group.class) || baseClass.equals(Device.class)) {
             Context.getPermissionsManager().refreshDeviceAndGroupPermissions();
             Context.getPermissionsManager().refreshAllExtendedPermissions();
         }
@@ -114,21 +105,13 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
             Context.getPermissionsManager().checkUserUpdate(getUserId(), before, (User) entity);
         } else if (baseClass.equals(Command.class)) {
             Context.getPermissionsManager().checkLimitCommands(getUserId());
-        } else if (baseClass.equals(Vehicle.class)) {
-            Vehicle item = (Vehicle) entity;
-            Long id = Context.getVehicleManager().getIdByNumber(item.getNumber());
-            if (null == id) {
-                throw new SQLException("NO Vehicle found with number: " + item.getNumber());
-            }
-            item.setId(id);
-            entity = (T) item;
         }
+
         Context.getPermissionsManager().checkPermission(baseClass, getUserId(), entity.getId());
 
         Context.getManager(baseClass).updateItem(entity);
 
-        if (baseClass.equals(Group.class) || baseClass.equals(Device.class)
-                || baseClass.equals(Vehicle.class) || baseClass.equals(Vehicle.class)) {
+        if (baseClass.equals(Group.class) || baseClass.equals(Device.class)) {
             Context.getPermissionsManager().refreshDeviceAndGroupPermissions();
             Context.getPermissionsManager().refreshAllExtendedPermissions();
         }
@@ -140,11 +123,16 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
     public Response remove(@PathParam("id") String idStr) throws SQLException {
 
         Long id = null;
-        if (baseClass.equals(Vehicle.class)) {
-            id = Context.getVehicleManager().getIdByNumber(idStr);
+        if (baseClass.equals(Device.class)) {
+            Device device = Context.getDeviceManager().getByUniqueId(idStr);
+            if (null == device) {
+                throw new SQLException("Vechicle id: " + idStr + " is not valid.");
+            }
+            id = device.getId();
         } else {
             id = Long.valueOf(idStr);
         }
+        Objects.requireNonNull(id);
         Context.getPermissionsManager().checkReadonly(getUserId());
         if (baseClass.equals(Device.class)) {
             Context.getPermissionsManager().checkDeviceReadonly(getUserId());
@@ -156,6 +144,8 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
         BaseObjectManager<T> manager = Context.getManager(baseClass);
         manager.removeItem(id);
 
+        Context.getDataManager().linkObject(User.class, getUserId(), baseClass, id, false);
+
         if (manager instanceof SimpleObjectManager) {
             ((SimpleObjectManager<T>) manager).refreshUserItems();
             if (manager instanceof ExtendedObjectManager) {
@@ -163,7 +153,7 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
             }
         }
         if (baseClass.equals(Group.class) || baseClass.equals(Device.class)
-                || baseClass.equals(User.class) || baseClass.equals(Vehicle.class)) {
+                || baseClass.equals(User.class)) {
             Context.getPermissionsManager().refreshDeviceAndGroupPermissions();
             if (baseClass.equals(User.class)) {
                 Context.getPermissionsManager().refreshAllUsersPermissions();

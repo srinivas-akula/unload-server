@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd"
+	logicalFilePath="unload-changelog-1">
+
+	<changeSet author="author" id="unload-changelog-1">
+
+		<addColumn tableName="users">
+
+			<column name="created" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+				<constraints nullable="false" />
+			</column>
+
+			<column name="vehiclelimit" type="INT" defaultValue="1">
+				<constraints nullable="false" />
+			</column>
+
+			<column name="mode" type="VARCHAR(10)" defaultValue="D">
+				<constraints nullable="false" />
+			</column>
+		</addColumn>
+
+		<insert tableName="users">
+			<column name="phone" value="9492755325" />
+			<column name="uid" value="9492755325" />
+			<column name="name" value="Srinvias Akula" />
+			<column name="displayname" value="sree" />
+			<column name="userlimit" value="-1" />
+			<column name="vehiclelimit" value="-1" />
+			<column name="mode" value="O" />
+			<column name="email" value="sree.ouct@gmail.com" />
+			<column name="hashedpassword"
+				value="D33DCA55ABD4CC5BC76F2BC0B4E603FE2C6F61F4C1EF2D47" />
+			<column name="salt"
+				value="000000000000000000000000000000000000000000000000" />
+			<column name="admin" valueBoolean="true" />
+		</insert>
+
+	</changeSet>
+</databaseChangeLog>

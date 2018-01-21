@@ -29,17 +29,12 @@ import java.util.Set;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
 
-import liquibase.Contexts;
-import liquibase.Liquibase;
-import liquibase.database.Database;
-import liquibase.database.DatabaseFactory;
-import liquibase.exception.LiquibaseException;
-import liquibase.resource.FileSystemResourceAccessor;
-import liquibase.resource.ResourceAccessor;
-
 import org.traccar.Config;
 import org.traccar.helper.Log;
 import org.traccar.model.Attribute;
+import org.traccar.model.BaseModel;
+import org.traccar.model.Calendar;
+import org.traccar.model.Command;
 import org.traccar.model.Device;
 import org.traccar.model.Driver;
 import org.traccar.model.Event;
@@ -48,17 +43,21 @@ import org.traccar.model.Group;
 import org.traccar.model.ManagedUser;
 import org.traccar.model.Notification;
 import org.traccar.model.Permission;
-import org.traccar.model.BaseModel;
-import org.traccar.model.Calendar;
-import org.traccar.model.Command;
 import org.traccar.model.Position;
 import org.traccar.model.Server;
 import org.traccar.model.Statistics;
 import org.traccar.model.User;
 
-import com.sringa.data.model.Vehicle;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+
+import liquibase.Contexts;
+import liquibase.Liquibase;
+import liquibase.database.Database;
+import liquibase.database.DatabaseFactory;
+import liquibase.exception.LiquibaseException;
+import liquibase.resource.FileSystemResourceAccessor;
+import liquibase.resource.ResourceAccessor;
 
 public class DataManager {
 
@@ -377,8 +376,6 @@ public class DataManager {
 
     public static Class<?> getClassByName(String name) throws ClassNotFoundException {
         switch (name.toLowerCase().replace("id", "")) {
-            case "vehicle":
-                return Vehicle.class;
             case "device":
                 return Device.class;
             case "group":
