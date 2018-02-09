@@ -7,7 +7,33 @@
 
 	<changeSet author="author" id="unload-changelog-1">
 
+		<!-- Tweak old model. -->
+		<dropUniqueConstraint tableName="users"
+			constraintName="uk_user_email" />
+
+		<dropNotNullConstraint columnDataType="VARCHAR(128)"
+			columnName="email" tableName="users" />
+
+		<dropNotNullConstraint columnName="name"
+			tableName="users" />
+
+		<delete tableName="users">
+			<where>email = 'admin'</where>
+		</delete>
+
 		<addColumn tableName="users">
+
+			<column name="phone" type="VARCHAR(30)">
+				<constraints nullable="false" />
+			</column>
+
+			<column name="uid" type="VARCHAR(30)">
+				<constraints nullable="true" />
+			</column>
+
+			<column name="displayname" type="VARCHAR(100)">
+				<constraints nullable="true" />
+			</column>
 
 			<column name="created" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
 				<constraints nullable="false" />
@@ -20,7 +46,18 @@
 			<column name="mode" type="VARCHAR(10)" defaultValue="D">
 				<constraints nullable="false" />
 			</column>
+
+			<column name="providerid" type="VARCHAR(100)">
+				<constraints nullable="true" />
+			</column>
 		</addColumn>
+
+		<addDefaultValue columnName="category" defaultValue="truck"
+			tableName="devices" />
+
+
+		<addUniqueConstraint tableName="users"
+			columnNames="phone" constraintName="uk_user_phone" />
 
 		<insert tableName="users">
 			<column name="phone" value="9492755325" />

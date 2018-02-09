@@ -144,7 +144,7 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
         BaseObjectManager<T> manager = Context.getManager(baseClass);
         manager.removeItem(id);
 
-        Context.getDataManager().linkObject(User.class, getUserId(), baseClass, id, false);
+//        Context.getDataManager().linkObject(User.class, getUserId(), baseClass, id, false);
 
         if (manager instanceof SimpleObjectManager) {
             ((SimpleObjectManager<T>) manager).refreshUserItems();

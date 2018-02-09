@@ -478,18 +478,20 @@ Ext.define('Traccar.view.ReportController', {
         text: Strings.positionSpeed,
         dataIndex: 'speed',
         renderer: Traccar.AttributeFormatter.getFormatter('speed')
-    }, {
-        text: Strings.positionAddress,
-        dataIndex: 'address',
-        renderer: function (value, metaData, record) {
-            if (!value) {
-                return '<a href="#" onclick="Ext.fireEvent(\'routegeocode\', ' +
-                    record.getId() + ')" >' +
-                    Strings.sharedShowAddress + '</a>';
-            }
-            return Traccar.AttributeFormatter.getFormatter('address')(value);
-        }
-    }],
+    }
+//    , {
+//        text: Strings.positionAddress,
+//        dataIndex: 'address',
+//        renderer: function (value, metaData, record) {
+//            if (!value) {
+//                return '<a href="#" onclick="Ext.fireEvent(\'routegeocode\', ' +
+//                    record.getId() + ')" >' +
+//                    Strings.sharedShowAddress + '</a>';
+//            }
+//            return Traccar.AttributeFormatter.getFormatter('address')(value);
+//        }
+//    }
+    ],
 
     eventsColumns: [{
         text: Strings.positionFixTime,

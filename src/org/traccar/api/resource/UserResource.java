@@ -21,9 +21,11 @@ import org.traccar.model.User;
 
 import javax.annotation.security.PermitAll;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
@@ -93,38 +95,56 @@ public class UserResource extends BaseObjectResource<User> {
     @POST
     public Response updatePwd(User entity) throws Exception {
 
-        if (null == entity.getSalt() || null == entity.getHashedPassword() || null == entity.getPhone()) {
+        if (null == entity.getSalt() || null == entity.getHashedPassword()
+                || null == entity.getPhone()) {
             throw new Exception("Phone or password is missing.");
         }
         User user = Context.getUsersManager().getByPhone(entity.getPhone());
         if (null == user) {
             throw new Exception("No User exists with phone: " + entity.getPhone());
         }
-        Context.getUsersManager().updateItem(entity);
+        user.setHashedPassword(entity.getHashedPassword());
+        user.setSalt(entity.getSalt());
+        Context.getUsersManager().updateItem(user);
         return Response.ok(entity).build();
     }
 
     @PermitAll
-    @Path("new")
+    @Path("app")
     @POST
     public Response addNewUser(User entity) throws Exception {
 
-        if (null == entity.getPhone() || null == entity.getUid() || null == entity.getMode()
+        if (null == entity.getPhone() || null == entity.getMode()
                 || null == entity.getHashedPassword() || null == entity.getSalt()) {
-            throw new Exception("Phone or Uid or Mode or Password is missing.");
-        }
-
-        final User user = Context.getUsersManager().getByPhone(entity.getPhone());
-        if (null != user) {
-            return Response.ok(entity).build();
-        }
-        if ("D".equals(entity.getMode())) {
-            entity.setVehiclelimit(1);
-        } else {
-            entity.setVehiclelimit(20);
+            throw new Exception("Phone or Mode or Password is missing.");
         }
         entity.setUserLimit(1);
-        Context.getUsersManager().addItem(entity);
+        final User user = Context.getUsersManager().getByPhone(entity.getPhone());
+        final int limit = "D".equals(entity.getMode()) ? 1 : 20;
+        if (null != user) {
+            user.setDeviceLimit(limit);
+            user.setVehiclelimit(limit);
+            Context.getUsersManager().updateItem(user);
+        } else {
+            entity.setDeviceLimit(limit);
+            entity.setVehiclelimit(limit);
+            Context.getUsersManager().addItem(entity);
+        }
         return Response.ok(entity).build();
+    }
+
+    @Override
+    @Path("{id}")
+    @DELETE
+    public Response remove(@PathParam("id") String idStr) throws SQLException {
+
+        final Set<Long> userDevices = Context.getDeviceManager().getUserItems(Long.valueOf(idStr));
+        super.remove(idStr);
+        if (!userDevices.isEmpty()) {
+            for (Long id : userDevices) {
+                Context.getDeviceManager().removeItem(id);
+            }
+        }
+        return Response.noContent().build();
     }
 }

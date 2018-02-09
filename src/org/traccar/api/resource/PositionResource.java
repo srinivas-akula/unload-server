@@ -1,29 +1,27 @@
 /*
  * Copyright 2015 - 2016 Anton Tananaev (anton@traccar.org)
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package org.traccar.api.resource;
 
-import org.traccar.Context;
-import org.traccar.api.BaseResource;
-import org.traccar.helper.DateUtil;
-import org.traccar.model.Position;
-import org.traccar.web.CsvBuilder;
-import org.traccar.web.GpxBuilder;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -31,10 +29,16 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import org.traccar.Context;
+import org.traccar.api.BaseResource;
+import org.traccar.database.DeviceManager;
+import org.traccar.geolocation.FixedLocation;
+import org.traccar.helper.DateUtil;
+import org.traccar.model.Device;
+import org.traccar.model.DeviceLocation;
+import org.traccar.model.Position;
+import org.traccar.web.CsvBuilder;
+import org.traccar.web.GpxBuilder;
 
 @Path("positions")
 @Produces(MediaType.APPLICATION_JSON)
@@ -47,10 +51,9 @@ public class PositionResource extends BaseResource {
     public static final String CONTENT_DISPOSITION_VALUE_GPX = "attachment; filename=positions.gpx";
 
     @GET
-    public Collection<Position> getJson(
-            @QueryParam("deviceId") long deviceId, @QueryParam("id") List<Long> positionIds,
-            @QueryParam("from") String from, @QueryParam("to") String to)
-            throws SQLException {
+    public Collection<Position> getJson(@QueryParam("deviceId") long deviceId,
+            @QueryParam("id") List<Long> positionIds, @QueryParam("from") String from,
+            @QueryParam("to") String to) throws SQLException {
         if (!positionIds.isEmpty()) {
             ArrayList<Position> positions = new ArrayList<>();
             for (Long positionId : positionIds) {
@@ -63,34 +66,68 @@ public class PositionResource extends BaseResource {
             return Context.getDeviceManager().getInitialState(getUserId());
         } else {
             Context.getPermissionsManager().checkDevice(getUserId(), deviceId);
-            return Context.getDataManager().getPositions(
-                    deviceId, DateUtil.parseDate(from), DateUtil.parseDate(to));
+            return Context.getDataManager().getPositions(deviceId, DateUtil.parseDate(from),
+                    DateUtil.parseDate(to));
         }
     }
 
     @GET
     @Produces(TEXT_CSV)
-    public Response getCsv(
-            @QueryParam("deviceId") long deviceId, @QueryParam("from") String from, @QueryParam("to") String to)
-            throws SQLException {
+    public Response getCsv(@QueryParam("deviceId") long deviceId, @QueryParam("from") String from,
+            @QueryParam("to") String to) throws SQLException {
         Context.getPermissionsManager().checkDevice(getUserId(), deviceId);
         CsvBuilder csv = new CsvBuilder();
         csv.addHeaderLine(new Position());
-        csv.addArray(Context.getDataManager().getPositions(
-                deviceId, DateUtil.parseDate(from), DateUtil.parseDate(to)));
-        return Response.ok(csv.build()).header(HttpHeaders.CONTENT_DISPOSITION, CONTENT_DISPOSITION_VALUE_CSV).build();
+        csv.addArray(Context.getDataManager().getPositions(deviceId, DateUtil.parseDate(from),
+                DateUtil.parseDate(to)));
+        return Response.ok(csv.build())
+                .header(HttpHeaders.CONTENT_DISPOSITION, CONTENT_DISPOSITION_VALUE_CSV).build();
     }
 
     @GET
     @Produces(GPX)
-    public Response getGpx(
-            @QueryParam("deviceId") long deviceId, @QueryParam("from") String from, @QueryParam("to") String to)
-            throws SQLException {
+    public Response getGpx(@QueryParam("deviceId") long deviceId, @QueryParam("from") String from,
+            @QueryParam("to") String to) throws SQLException {
         Context.getPermissionsManager().checkDevice(getUserId(), deviceId);
         GpxBuilder gpx = new GpxBuilder(Context.getIdentityManager().getById(deviceId).getName());
-        gpx.addPositions(Context.getDataManager().getPositions(
-                deviceId, DateUtil.parseDate(from), DateUtil.parseDate(to)));
-        return Response.ok(gpx.build()).header(HttpHeaders.CONTENT_DISPOSITION, CONTENT_DISPOSITION_VALUE_GPX).build();
+        gpx.addPositions(Context.getDataManager().getPositions(deviceId, DateUtil.parseDate(from),
+                DateUtil.parseDate(to)));
+        return Response.ok(gpx.build())
+                .header(HttpHeaders.CONTENT_DISPOSITION, CONTENT_DISPOSITION_VALUE_GPX).build();
     }
 
+    @POST
+    public Response updateDeviceLocation(DeviceLocation location) throws Exception {
+
+        if (null == location.getId() || null == location.getAddress()) {
+            throw new Exception("Not a valid location.");
+        }
+        DeviceManager deviceManager = Context.getDeviceManager();
+        try {
+            final Device device = deviceManager.getByUniqueId(location.getId());
+            if (null == device) {
+                throw new Exception("Not a valid device.");
+            }
+            FixedLocation fixedLocation = FixedLocation.get(location.getAddress());
+            if (null == fixedLocation) {
+                throw new Exception("Not a valid location.");
+            }
+
+            final Position position = new Position();
+            position.setLatitude(fixedLocation.getLat());
+            position.setLongitude(fixedLocation.getLon());
+            position.setDeviceId(device.getId());
+            position.setFixTime(new Date());
+            position.setDeviceTime(new Date());
+            Context.getDataManager().addPosition(position);
+
+            deviceManager.updateLatestPosition(position);
+
+            device.set("load", location.getLoad());
+            deviceManager.updateItem(device);
+        } catch (SQLException e) {
+            throw e;
+        }
+        return Response.ok(location).build();
+    }
 }
