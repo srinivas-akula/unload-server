@@ -30,6 +30,7 @@ import org.traccar.database.DriversManager;
 import org.traccar.database.GeofenceManager;
 import org.traccar.database.GroupsManager;
 import org.traccar.database.IdentityManager;
+import org.traccar.database.LocationsManager;
 import org.traccar.database.MediaManager;
 import org.traccar.database.NotificationManager;
 import org.traccar.database.PermissionsManager;
@@ -75,6 +76,12 @@ public final class Context {
 
     private Context() {
 
+    }
+
+    private static LocationsManager locationsManager;
+
+    public static LocationsManager getLocationsManager() {
+        return locationsManager;
     }
 
     private static Config config;
@@ -284,6 +291,7 @@ public final class Context {
             usersManager = new UsersManager(dataManager);
             groupsManager = new GroupsManager(dataManager);
             deviceManager = new DeviceManager(dataManager);
+            locationsManager = new LocationsManager(dataManager);
         }
         identityManager = deviceManager;
 

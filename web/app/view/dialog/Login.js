@@ -44,28 +44,28 @@ Ext.define('Traccar.view.dialog.Login', {
             xtype: 'image',
             src: 'logo.svg',
             alt: Strings.loginLogo,
-            width: 180,
-            height: 48,
+            width: 150,
+            height: 60,
             style: {
                 display: 'block',
                 margin: '10px auto 25px'
             }
         }
-        , 
-		{
-            xtype: 'combobox',
-            name: 'language',
-            fieldLabel: Strings.loginLanguage,
-            store: 'Languages',
-            displayField: 'name',
-            valueField: 'code',
-            editable: false,
-            submitValue: false,
-            listeners: {
-                select: 'onSelectLanguage'
-            },
-            reference: 'languageField'
-        }
+//        , 
+//		{
+//            xtype: 'combobox',
+//            name: 'language',
+//            fieldLabel: Strings.loginLanguage,
+//            store: 'Languages',
+//            displayField: 'name',
+//            valueField: 'code',
+//            editable: false,
+//            submitValue: false,
+//            listeners: {
+//                select: 'onSelectLanguage'
+//            },
+//            reference: 'languageField'
+//        }
         , {
             xtype: 'textfield',
             name: 'phone',
@@ -106,11 +106,11 @@ Ext.define('Traccar.view.dialog.Login', {
     },
 
     buttons: [
-    {
-        text: Strings.loginRegister,
-        handler: 'onRegisterClick',
-        reference: 'registerButton'
-    },
+//    {
+//        text: Strings.loginRegister,
+//        handler: 'onRegisterClick',
+//        reference: 'registerButton'
+//    },
     {
         text: Strings.loginLogin,
         handler: 'onLoginClick'

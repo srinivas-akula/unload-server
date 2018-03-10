@@ -13,11 +13,11 @@
  */
 package org.traccar.api.resource;
 
-import org.traccar.Context;
-import org.traccar.api.BaseObjectResource;
-import org.traccar.database.UsersManager;
-import org.traccar.model.ManagedUser;
-import org.traccar.model.User;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Set;
 
 import javax.annotation.security.PermitAll;
 import javax.ws.rs.Consumes;
@@ -30,10 +30,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Set;
+
+import org.traccar.Context;
+import org.traccar.api.BaseObjectResource;
+import org.traccar.database.UsersManager;
+import org.traccar.model.Device;
+import org.traccar.model.ManagedUser;
+import org.traccar.model.User;
 
 @Path("users")
 @Produces(MediaType.APPLICATION_JSON)
@@ -90,8 +93,7 @@ public class UserResource extends BaseObjectResource<User> {
         return Response.ok(entity).build();
     }
 
-    @PermitAll
-    @Path("register")
+    @Path("changepwd")
     @POST
     public Response updatePwd(User entity) throws Exception {
 
@@ -99,7 +101,8 @@ public class UserResource extends BaseObjectResource<User> {
                 || null == entity.getPhone()) {
             throw new Exception("Phone or password is missing.");
         }
-        User user = Context.getUsersManager().getByPhone(entity.getPhone());
+
+        User user = Context.getUsersManager().getById(getUserId());
         if (null == user) {
             throw new Exception("No User exists with phone: " + entity.getPhone());
         }
@@ -118,19 +121,30 @@ public class UserResource extends BaseObjectResource<User> {
                 || null == entity.getHashedPassword() || null == entity.getSalt()) {
             throw new Exception("Phone or Mode or Password is missing.");
         }
+        if (entity.getPhone().startsWith("+")) {
+            entity.setPhone(entity.getPhone().replaceAll("\\+", ""));
+        }
         entity.setUserLimit(1);
         final User user = Context.getUsersManager().getByPhone(entity.getPhone());
         final int limit = "D".equals(entity.getMode()) ? 1 : 20;
+        final UserResponse response = new UserResponse();
         if (null != user) {
             user.setDeviceLimit(limit);
             user.setVehiclelimit(limit);
+            user.setHashedPassword(entity.getHashedPassword());
+            user.setSalt(entity.getSalt());
             Context.getUsersManager().updateItem(user);
+            response.setUser(user);
+            response.setExisting(true);
+            final Set<Long> userDevices = Context.getDeviceManager().getUserItems(user.getId());
+            response.setDevices(Context.getDeviceManager().getItems(userDevices));
         } else {
             entity.setDeviceLimit(limit);
             entity.setVehiclelimit(limit);
             Context.getUsersManager().addItem(entity);
+            response.setUser(entity);
         }
-        return Response.ok(entity).build();
+        return Response.ok(response).build();
     }
 
     @Override
@@ -138,13 +152,49 @@ public class UserResource extends BaseObjectResource<User> {
     @DELETE
     public Response remove(@PathParam("id") String idStr) throws SQLException {
 
-        final Set<Long> userDevices = Context.getDeviceManager().getUserItems(Long.valueOf(idStr));
-        super.remove(idStr);
-        if (!userDevices.isEmpty()) {
-            for (Long id : userDevices) {
-                Context.getDeviceManager().removeItem(id);
+        if (Context.getPermissionsManager().isAdmin(getUserId())) {
+            final Set<Long> userDevices =
+                    Context.getDeviceManager().getUserItems(Long.valueOf(idStr));
+            super.remove(idStr);
+            if (!userDevices.isEmpty()) {
+                for (Long id : userDevices) {
+                    Context.getDeviceManager().removeItem(id);
+                }
             }
+            return Response.noContent().build();
+        } else {
+            throw new SQLException("Non Admin user should not delete user.");
         }
-        return Response.noContent().build();
+    }
+
+    class UserResponse {
+
+        private User user;
+        private Collection<Device> devices = new ArrayList<>();
+        private boolean existing;
+
+        public User getUser() {
+            return user;
+        }
+
+        public void setUser(User user) {
+            this.user = user;
+        }
+
+        public Collection<Device> getDevices() {
+            return devices;
+        }
+
+        public void setDevices(Collection<Device> devices) {
+            this.devices = devices;
+        }
+
+        public boolean isExisting() {
+            return existing;
+        }
+
+        public void setExisting(boolean existing) {
+            this.existing = existing;
+        }
     }
 }

@@ -32,7 +32,8 @@ import javax.ws.rs.core.Response;
 import org.traccar.Context;
 import org.traccar.api.BaseResource;
 import org.traccar.database.DeviceManager;
-import org.traccar.geolocation.FixedLocation;
+import org.traccar.database.LocationsManager;
+import org.traccar.database.LocationsManager.GeoLocation;
 import org.traccar.helper.DateUtil;
 import org.traccar.model.Device;
 import org.traccar.model.DeviceLocation;
@@ -99,7 +100,7 @@ public class PositionResource extends BaseResource {
     @POST
     public Response updateDeviceLocation(DeviceLocation location) throws Exception {
 
-        if (null == location.getId() || null == location.getAddress()) {
+        if (null == location.getId() || null == location.getState() || null == location.getCity()) {
             throw new Exception("Not a valid location.");
         }
         DeviceManager deviceManager = Context.getDeviceManager();
@@ -108,14 +109,16 @@ public class PositionResource extends BaseResource {
             if (null == device) {
                 throw new Exception("Not a valid device.");
             }
-            FixedLocation fixedLocation = FixedLocation.get(location.getAddress());
+            LocationsManager locationsManager = Context.getLocationsManager();
+            GeoLocation fixedLocation =
+                    locationsManager.getLocation(location.getCity(), location.getState());
             if (null == fixedLocation) {
                 throw new Exception("Not a valid location.");
             }
 
             final Position position = new Position();
             position.setLatitude(fixedLocation.getLat());
-            position.setLongitude(fixedLocation.getLon());
+            position.setLongitude(fixedLocation.getLng());
             position.setDeviceId(device.getId());
             position.setFixTime(new Date());
             position.setDeviceTime(new Date());

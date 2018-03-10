@@ -3,7 +3,8 @@ package org.traccar.model;
 public class DeviceLocation {
 
     private String id;
-    private String address;
+    private String state;
+    private String city;
     private int load;
 
     public String getId() {
@@ -14,12 +15,20 @@ public class DeviceLocation {
         this.id = id;
     }
 
-    public String getAddress() {
-        return address;
+    public String getState() {
+        return state;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
     }
 
     public int getLoad() {

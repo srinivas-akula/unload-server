@@ -22,14 +22,14 @@ Ext.define('Traccar.store.LoadStatuses', {
     data: [{
         id: '1',
         name: Strings.loaded,
-        color: '#b9e5c0'
+        color: Traccar.Style.mapColorOnline
     }, {
         id: '0',
         name: Strings.unLoaded,
-        color:'#ed6c6c'
+        color: Traccar.Style.mapColorOffline
     }, {
         id: 'unknown',
         name: Strings.loadStatusUnknown,
-        color:'#e6ed7a'
+        color: Traccar.Style.mapColorUnknown
     }]
 });

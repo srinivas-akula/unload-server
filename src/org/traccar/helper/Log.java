@@ -45,7 +45,7 @@ public final class Log {
     private static final String LOGGER_NAME = "traccar";
 
     private static final String STACK_PACKAGE = "org.traccar";
-    private static final int STACK_LIMIT = 3;
+    private static final int STACK_LIMIT = 10;
 
     private static Logger logger = null;
 

@@ -96,7 +96,19 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
 
     @Path("{id}")
     @PUT
-    public Response update(T entity) throws SQLException {
+    public Response update(@PathParam("id") String idStr, T entity) throws SQLException {
+
+        Long id = null;
+        if (baseClass.equals(Device.class)) {
+            Device device = Context.getDeviceManager().getByUniqueId(idStr);
+            if (null == device) {
+                throw new SQLException("Vechicle id: " + idStr + " is not valid.");
+            }
+            entity.setId(device.getId());
+        } else {
+            entity.setId(Long.valueOf(idStr));
+        }
+
         Context.getPermissionsManager().checkReadonly(getUserId());
         if (baseClass.equals(Device.class)) {
             Context.getPermissionsManager().checkDeviceReadonly(getUserId());
@@ -144,7 +156,7 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
         BaseObjectManager<T> manager = Context.getManager(baseClass);
         manager.removeItem(id);
 
-//        Context.getDataManager().linkObject(User.class, getUserId(), baseClass, id, false);
+        // Context.getDataManager().linkObject(User.class, getUserId(), baseClass, id, false);
 
         if (manager instanceof SimpleObjectManager) {
             ((SimpleObjectManager<T>) manager).refreshUserItems();
@@ -161,7 +173,7 @@ public abstract class BaseObjectResource<T extends BaseModel> extends BaseResour
                 Context.getPermissionsManager().refreshAllExtendedPermissions();
             }
         }
-        return Response.noContent().build();
+        return Response.ok().build();
     }
 
 }
